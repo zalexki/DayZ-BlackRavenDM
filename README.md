@@ -2,11 +2,11 @@
 This mod is used on DayZ-SA server owned by Black Raven Community.
 
 ## Features
-- Reduce stamina consumption only while sprint and jog
+- No stamina consumption while sprint/jump and no thirst/hunger
 - Log kill/death in a json file (checkout http://blackraven.fr/dayz)
 - Kill feed per session in chat game
 
-Other features are done in the init.c file of the mission like set max water and food, define different loadouts, spawns ?
+Other features are done in the init.c file of the mission like set max water and food, define different loadouts, spawns...
 
 ### Server setup.
 - Fresh install dayz 0.63 server

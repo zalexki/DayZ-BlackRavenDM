@@ -1,5 +1,24 @@
 modded class StaminaHandler
 {
+	void Init()
+	{
+		//! stamina consumers registration
+		m_StaminaConsumers = new StaminaConsumers;
+		m_StaminaConsumers.RegisterConsumer(EStaminaConsumers.HOLD_BREATH, STAMINA_HOLD_BREATH_THRESHOLD);
+		m_StaminaConsumers.RegisterConsumer(EStaminaConsumers.SPRINT, STAMINA_SPRINT_THRESHOLD);
+		m_StaminaConsumers.RegisterConsumer(EStaminaConsumers.JUMP, STAMINA_JUMP_THRESHOLD);
+		m_StaminaConsumers.RegisterConsumer(EStaminaConsumers.MELEE_HEAVY, STAMINA_MELEE_HEAVY_THRESHOLD);
+		m_StaminaConsumers.RegisterConsumer(EStaminaConsumers.MELEE_EVADE, STAMINA_MELEE_EVADE_THRESHOLD);
+
+		//! stamina modifiers registration
+		m_StaminaModifiers = new StaminaModifiers;
+		m_StaminaModifiers.RegisterFixed(EStaminaModifiers.HOLD_BREATH, STAMINA_DRAIN_HOLD_BREATH);
+		m_StaminaModifiers.RegisterFixed(EStaminaModifiers.JUMP, 0);
+		m_StaminaModifiers.RegisterRandomized(EStaminaModifiers.MELEE_LIGHT, 1, STAMINA_DRAIN_MELEE_LIGHT);
+		m_StaminaModifiers.RegisterRandomized(EStaminaModifiers.MELEE_HEAVY, STAMINA_DRAIN_MELEE_LIGHT, STAMINA_DRAIN_MELEE_HEAVY);
+		m_StaminaModifiers.RegisterRandomized(EStaminaModifiers.MELEE_EVADE, 3, STAMINA_DRAIN_MELEE_EVADE);
+	}
+
     override void Update(float deltaT)
     {
  #ifdef DEVELOPER
@@ -33,13 +52,13 @@ modded class StaminaHandler
                 case DayZPlayerConstants.MOVEMENTIDX_SPRINT: //sprint
                     if ( m_PlayerStance == DayZPlayerConstants.STANCEIDX_ERECT )
                     {
-                        m_StaminaDelta = -1;
+                        m_StaminaDelta = 0;
                         SetCooldown(STAMINA_REGEN_COOLDOWN_DEPLETION);
                         break;
                     }
                     if ( m_PlayerStance == DayZPlayerConstants.STANCEIDX_CROUCH)
                     {
-                        m_StaminaDelta = -1;
+                        m_StaminaDelta = 0;
                         SetCooldown(STAMINA_REGEN_COOLDOWN_DEPLETION);
                         break;
                     }
