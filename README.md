@@ -12,7 +12,7 @@ Other features are done in the init.c file of the mission like set max water and
 - Fresh install dayz 0.63 server
 - copy the BlackRavenDM folder into the root of server folder
 - edit the serverDZ.cfg file with your own server preferences
-- Run server with *-mod=BlackRavenDM*
+- Run server with *-mod=BlackRavenDM* (check BlackRavenDMDayzMod.bat for a debug start/stop/wipe setup)
 
 ### Download link for packed files
 TODO: make a release
