@@ -3,7 +3,7 @@ This mod is used on DayZ-SA server owned by Black Raven Community.
 
 ## Features
 - No stamina consumption while sprint/jump and no thirst/hunger
-- Log kill/death in a json file (checkout http://blackraven.fr/dayz)
+- Log kill/death in a json file (checkout http://black-raven.fr/dayz)
 - Kill feed per session in chat game
 
 Other features are done in the init.c file of the mission like set max water and food, define different loadouts, spawns...
