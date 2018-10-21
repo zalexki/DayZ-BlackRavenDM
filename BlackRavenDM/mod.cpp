@@ -8,7 +8,7 @@ class CfgMods
 	    hideName = 1;
 	    hidePicture = 1;
 	    name = "BlackRaven DeathMatch";
-	    credits = "zalexki, BlackRavenCommunity, DannyDog, DayzModders Discord";
+	    credits = "zalexki, BlackRavenCommunity, DannyDog, DayzModders Discord, DaOne";
 	    author = "zalexki";
 	    authorID = "0";
 	    version = "1.0";

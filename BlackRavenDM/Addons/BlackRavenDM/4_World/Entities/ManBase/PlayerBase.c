@@ -65,9 +65,6 @@ modded class PlayerBase
     {
         KillStreakHandler(killer);
 
-        // This delete player body in 60s
-        GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(DeleteEntity, 60000, false, this);
-
         ref SurvivorBase sbKilled = this;
         ref SurvivorBase sbKiller = killer;
         ref Man manKiller = killer;
@@ -79,12 +76,10 @@ modded class PlayerBase
             SKL.DeathHandler(sbKilled.GetPlayerID());
         }
 
-        // This seems to increase crash server
-//        SurvivorBase sbKilled = this;
-//        KillFeedChat(killer, sbKilled);
+        // This seems to increase crash server, anyway it spam too much because of our DeathMatch setup
+        // KillFeedChat(killer, sbKilled);
 
-        if (GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_CLIENT)
-        {
+        if (GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_CLIENT) {
             // @NOTE: this branch does not happen, EEKilled is called only on server
             if (GetGame().GetPlayer() == this) {
                 super.EEKilled(killer);
@@ -92,30 +87,34 @@ modded class PlayerBase
             if (GetHumanInventory().GetEntityInHands())
                 GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity,1000,false,( GetHumanInventory().GetEntityInHands() ));
         }
-        else if (GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_SERVER)//server
-        {
+        else if (GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_SERVER) {
             if (GetBleedingManager()) { delete GetBleedingManager(); };
+            // This delete player body and weapon in 60s
+            GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(DeleteEntity, 90000, false, this);
+
             if (GetHumanInventory().GetEntityInHands() ) {
-                GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity,1000,false,( GetHumanInventory().GetEntityInHands() ));
+                GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity, 1000,false,( GetHumanInventory().GetEntityInHands() ));
+                GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(DeleteEntity, 90000, false, ( GetHumanInventory().GetEntityInHands() ));
             }
         }
 
-        if ( GetSoftSkillManager() ) {
-            delete GetSoftSkillManager();
-        }
+        if ( GetSoftSkillManager() ) { delete GetSoftSkillManager(); }
 
         GetStateManager().OnPlayerKilled();
 
         // kill character in database
-        if (GetHive())
-        {
-            GetHive().CharacterKill(this);
-        }
+        if (GetHive()) { GetHive().CharacterKill(this); }
     }
 
 	void DeleteEntity(EntityAI entity)
     {
-        entity.Delete();
+        ItemBase IBGun = ItemBase.Cast(entity);
+        if (IBGun.IsInherited(Weapon)) {
+             // If weapon has no parent it's on the ground
+            if (IBGun.GetHierarchyParent() == null) { entity.Delete(); }
+        } else {
+            entity.Delete();
+        }
     }
 
     override void OnConnect()
