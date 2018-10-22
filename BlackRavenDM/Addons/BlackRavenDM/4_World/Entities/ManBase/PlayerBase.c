@@ -89,7 +89,8 @@ modded class PlayerBase
         }
         else if (GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_SERVER) {
             if (GetBleedingManager()) { delete GetBleedingManager(); };
-            // This delete player body and weapon in 60s
+
+            // This delete player body and weapon in 90s
             GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(DeleteEntity, 90000, false, this);
 
             if (GetHumanInventory().GetEntityInHands() ) {
@@ -109,7 +110,7 @@ modded class PlayerBase
 	void DeleteEntity(EntityAI entity)
     {
         ItemBase IBGun = ItemBase.Cast(entity);
-        if (IBGun.IsInherited(Weapon)) {
+        if (IBGun != NULL && IBGun.IsInherited(Weapon)) {
              // If weapon has no parent it's on the ground
             if (IBGun.GetHierarchyParent() == null) { entity.Delete(); }
         } else {
