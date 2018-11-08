@@ -13,7 +13,7 @@ class SimpleKillLogger
         Save(data, id);
     }
 
-    void DeathHandler(string id)
+    void DeathHandler(string id, vector pos)
     {
         data = Load(id);
 
@@ -25,10 +25,12 @@ class SimpleKillLogger
             data.Set("death", "1");
         }
 
+        data.Set("posDeath", pos[0].ToString() +","+pos[1].ToString()+","+pos[2].ToString());
+
         Save(data, id);
     }
 
-    void KillHandler(string id)
+    void KillHandler(string id, vector pos)
     {
         data = Load(id);
 
@@ -39,6 +41,8 @@ class SimpleKillLogger
         } else {
             data.Set("kill", "1");
         }
+
+        data.Set("posKill", pos[0].ToString() +","+pos[1].ToString()+","+pos[2].ToString());
 
         Save(data, id);
     }

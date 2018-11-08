@@ -6,14 +6,14 @@ modded class PlayerBase
     void KillStreakHandler(Object killer)
     {
         if (killer.IsInherited(PlayerBase)) {
-            PlayerBase playerKiller = killer;
+            PlayerBase playerKiller = PlayerBase.Cast(killer);
             playerKiller.kills++;
 
             playerKiller.RPCSingleParam(ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>("You have " + playerKiller.kills.ToString() + " kills."), false, playerKiller.GetIdentity());
             playerKiller.RPCSingleParam(ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>(""), false, playerKiller.GetIdentity()); // skip line
 
             string message = "";
-            switch ( playerKiller.kills ) {
+            switch (playerKiller.kills) {
                 case 5:
                     message = " is on a killing spree!";
                 break;
@@ -21,13 +21,16 @@ modded class PlayerBase
                     message = " is dominating!";
                 break;
                 case 15:
-                    message = " is Unstoppable!";
+                    message = " is unstoppable!";
                 break;
                 case 20:
-                    message = " is Unstoppable!";
+                    message = " is unstoppable!";
                 break;
                 case 25:
                     message = " is Godlike!";
+                break;
+                case 30:
+                    message = " is at 30 kills is he cheating ?";
                 break;
             }
 
@@ -35,9 +38,10 @@ modded class PlayerBase
                 ref array< Man > allPlayers = new ref array< Man >;
                 GetGame().GetWorld().GetPlayerList(allPlayers);
 
-                foreach( PlayerBase serverPlayer : allPlayers ) {
-                    serverPlayer.RPCSingleParam(ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>(playerKiller.GetIdentity().GetName() + message), false, serverPlayer.GetIdentity());
-                    serverPlayer.RPCSingleParam(ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>(""), false, serverPlayer.GetIdentity()); // skip line
+                foreach( Man man : allPlayers ) {
+                    PlayerBase playerBase = PlayerBase.Cast(man);
+                    playerBase.RPCSingleParam(ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>(playerKiller.GetIdentity().GetName() + message), false, playerBase.GetIdentity());
+                    playerBase.RPCSingleParam(ERPCs.RPC_USER_ACTION_MESSAGE, new Param1<string>(""), false, playerBase.GetIdentity()); // skip line
                 }
             }
 
@@ -46,68 +50,55 @@ modded class PlayerBase
         }
     }
 
-    void KillFeedChat(Object killer, SurvivorBase sbKilled)
+    override void EEKilled( Object killer )
     {
-        if (killer.IsMan()) {
-            Man manKiller = Man.Cast(killer);
-            if (sbKilled.GetPlayerFullName() == manKiller.GetIdentity().GetName()) {
-                GetGame().ChatPlayer( 0, sbKilled.GetPlayerFullName() + " committed suicide");
-            } else {
-                SurvivorBase sbKiller = SurvivorBase.Cast(killer);
-                GetGame().ChatPlayer( 0, sbKilled.GetPlayerFullName() + " killed By " + sbKiller.GetPlayerFullName());
-            }
-        } else {
-            GetGame().ChatPlayer( 0, sbKilled.GetPlayerFullName() + " killed By zombie/bleedout");
-        }
-    }
+        Print("DEBUG: EEKilled, you have died");
 
-    override void EEKilled(Object killer)
-    {
         KillStreakHandler(killer);
 
-        ref SurvivorBase sbKilled = this;
-        ref SurvivorBase sbKiller = killer;
-        ref Man manKiller = killer;
+        ref SurvivorBase sbKilled = SurvivorBase.Cast(this);
+        ref SurvivorBase sbKiller = SurvivorBase.Cast(killer);
+        ref Man manKiller = Man.Cast(killer);
 
         if (GetGame().IsServer()) {
             if (manKiller.IsMan() && sbKiller.GetPlayerID() != sbKilled.GetPlayerID()) {
-                SKL.KillHandler(sbKiller.GetPlayerID());
+                SKL.KillHandler(sbKiller.GetPlayerID(), sbKiller.GetPosition());
             }
-            SKL.DeathHandler(sbKilled.GetPlayerID());
+            SKL.DeathHandler(sbKilled.GetPlayerID(), sbKilled.GetPosition());
         }
 
-        // This seems to increase crash server, anyway it spam too much because of our DeathMatch setup
-        // KillFeedChat(killer, sbKilled);
+        GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(DeleteEntity, 300000, false, this);
+        DayZPlayerSyncJunctures.SendDeath(this, -1, 0);
 
-        if (GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_CLIENT) {
-            // @NOTE: this branch does not happen, EEKilled is called only on server
-            if (GetGame().GetPlayer() == this) {
-                super.EEKilled(killer);
+        if (GetBleedingManagerServer()) delete GetBleedingManagerServer();
+
+        if (GetHumanInventory().GetEntityInHands()) {
+            if (CanDropEntity(this)) {
+                if (!IsRestrained()) {
+                    GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity, 1000, false, ( GetHumanInventory().GetEntityInHands() ));
+                    GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(DeleteEntity, 300000, false, ( GetHumanInventory().GetEntityInHands() ));
+                }
             }
-            if (GetHumanInventory().GetEntityInHands())
-                GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity,1000,false,( GetHumanInventory().GetEntityInHands() ));
+
         }
-        else if (GetInstanceType() == DayZPlayerInstanceType.INSTANCETYPE_SERVER) {
-            if (GetBleedingManager()) { delete GetBleedingManager(); };
-
-            // This delete player body and weapon in 90s
-            GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(DeleteEntity, 90000, false, this);
-
-            if (GetHumanInventory().GetEntityInHands() ) {
-                GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(ServerDropEntity, 1000,false,( GetHumanInventory().GetEntityInHands() ));
-                GetGame().GetCallQueue(CALL_CATEGORY_GAMEPLAY).CallLater(DeleteEntity, 90000, false, ( GetHumanInventory().GetEntityInHands() ));
-            }
-        }
-
-        if ( GetSoftSkillManager() ) { delete GetSoftSkillManager(); }
-
-        GetStateManager().OnPlayerKilled();
 
         // kill character in database
-        if (GetHive()) { GetHive().CharacterKill(this); }
+        if (GetHive()) {
+            GetHive().CharacterKill(this);
+        }
+
+        // disable voice communication
+        GetGame().EnableVoN(this, false);
+
+
+        if (GetSoftSkillManager()) {
+            delete GetSoftSkillManager();
+        }
+
+        GetSymptomManager().OnPlayerKilled();
     }
 
-	void DeleteEntity(EntityAI entity)
+    void DeleteEntity(EntityAI entity)
     {
         ItemBase IBGun = ItemBase.Cast(entity);
         if (IBGun != NULL && IBGun.IsInherited(Weapon)) {
@@ -122,7 +113,7 @@ modded class PlayerBase
     {
         Debug.Log("Player connected:"+this.ToString(),"Connect");
 
-        ref SurvivorBase sb = this;
+        ref SurvivorBase sb = SurvivorBase.Cast(this);
         sb.SetPlayerID(this.GetIdentity().GetPlainId());
         sb.SetPlayerFullName(this.GetIdentity().GetName());
 
