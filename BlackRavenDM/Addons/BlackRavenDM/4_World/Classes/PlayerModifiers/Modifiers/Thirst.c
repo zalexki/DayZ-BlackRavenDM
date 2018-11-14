@@ -1,4 +1,4 @@
 modded class ThirstMdfr
 {
-    override void OnTick(PlayerBase player, float deltaT){}
+    override void OnTick(PlayerBase player, float deltaT){ return; };
 }
