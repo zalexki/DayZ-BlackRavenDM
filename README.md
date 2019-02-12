@@ -1,3 +1,6 @@
+# OUTDATED
+## Even if outdated this mod can still be a source of how to do some basic things in dayz modding.
+
 # DayZ Black Raven Mod
 This mod is used on DayZ-SA server owned by Black Raven Community.
 
